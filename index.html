@@ -269,12 +269,12 @@
             <div class="upload-heading">
               <div>
                 <label for="csv-file">Import people by village &amp; ward</label>
-                <p class="field-help">CSV needs a ward column and at least one of phone or email. Name is optional.</p>
+                <p class="field-help">CSV columns: name, phone, email, village, mandal, district, state, country, ward. Village and location columns identify each row. If village is blank, location columns can identify it; rows without location details use the default village selected below.</p>
               </div>
               <span class="upload-icon" aria-hidden="true">↑</span>
             </div>
-            <label class="sr-only" for="csv-village">Village for imported contacts</label>
-            <select id="csv-village" class="csv-village" required></select>
+            <label for="csv-village">Default village <span class="muted">(for rows without village/location)</span></label>
+            <select id="csv-village" class="csv-village"></select>
             <div class="upload-actions">
               <label class="button button-outline file-button" for="csv-file">Choose CSV file</label>
               <input id="csv-file" type="file" accept=".csv,text/csv" hidden>

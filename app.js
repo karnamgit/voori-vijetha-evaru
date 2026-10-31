@@ -94,6 +94,13 @@ const villagePickerSelectors = [
   "#village-filter",
   "#dashboard-village-filter",
 ];
+const expandedVillagePickerSelectors = new Set([
+  "#candidate-village",
+  "#contact-village",
+  "#contact-edit-village",
+  "#csv-village",
+  "#survey-village",
+]);
 const locationFilterFields = [
   ["country", "Country"],
   ["state", "State"],
@@ -108,7 +115,7 @@ function ensureVillagePickerControls(select) {
   control.className = "village-picker-control";
   control.dataset.villagePickerOwner = select.id;
   control.innerHTML = `
-    <details class="village-picker-filters">
+    <details class="village-picker-filters" ${expandedVillagePickerSelectors.has(`#${select.id}`) ? "open" : ""}>
       <summary>Filter villages by location <span>Optional</span></summary>
       <div class="village-picker-filter-fields">
         ${locationFilterFields.map(([key, label]) => `
@@ -777,7 +784,7 @@ function renderPeople() {
     return `
       <tr>
         <td><label class="contact-select-label"><input type="checkbox" data-select-contact="${escapeHtml(contact.id)}" ${selectedContactIds.has(contact.id) ? "checked" : ""} aria-label="Select ${escapeHtml(contact.name || contact.phone || contact.email)}"><span class="person-name">${escapeHtml(contact.name || "Resident")}</span></label>${contact.phone ? `<span class="person-phone">${escapeHtml(contact.phone)}</span>` : ""}${contact.email ? `<span class="person-phone">${escapeHtml(contact.email)}</span>` : ""}</td>
-        <td><span class="village-name-cell">${escapeHtml(village ? villageNameLabel(village) : "Unknown village")}</span>${village ? villageLocationMarkup(village) : ""}<span class="ward-secondary">Ward ${escapeHtml(contact.ward)}</span></td>
+        <td><span class="village-name-cell">${escapeHtml(village ? villageNameLabel(village) : "Unknown village")}</span><span class="ward-secondary">Ward ${escapeHtml(contact.ward)}</span></td>
         <td><span class="response-pill ${responseClass}">${escapeHtml(responseLabel(response))}${savedResponse?.channel ? `<small>${escapeHtml(responseChannelLabel(savedResponse.channel))}</small>` : ""}</span></td>
         <td>
           <div class="contact-actions">
@@ -1525,7 +1532,7 @@ for (const selector of ["#close-contact-edit", "#cancel-contact-edit"]) {
 }
 
 document.querySelector("#download-template").addEventListener("click", () => {
-  const template = "name,phone,email,ward\nRavi,+919876543210,ravi@example.com,1\nSita,,sita@example.com,2\n";
+  const template = "name,phone,email,village,mandal,district,state,country,ward\nRavi,+919876543210,ravi@example.com,Adigoppula,Durgi,Palnadu,Andhra Pradesh,India,1\nSita,,sita@example.com,Adigoppula,Durgi,Palnadu,Andhra Pradesh,India,2\n";
   const url = URL.createObjectURL(new Blob([template], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
@@ -1576,7 +1583,17 @@ function parseCsv(text) {
   return rows.map((values) => {
     const record = Object.fromEntries(headers.map((header, index) => [header, values[index] || ""]));
     if (!record.phone && !record.email) throw new Error("Every CSV row needs a phone number, an email address, or both.");
-    return { name: record.name || "", phone: record.phone || "", email: record.email || "", ward: record.ward || "" };
+    return {
+      name: record.name || "",
+      phone: record.phone || "",
+      email: record.email || "",
+      village: record.village || "",
+      mandal: record.mandal || "",
+      district: record.district || "",
+      state: record.state || "",
+      country: record.country || "",
+      ward: record.ward || "",
+    };
   });
 }
 
@@ -1586,9 +1603,12 @@ document.querySelector("#csv-file").addEventListener("change", async (event) => 
   const message = document.querySelector("#upload-message");
   message.textContent = `Reading ${file.name}…`;
   try {
-    const villageId = document.querySelector("#csv-village").value;
-    if (!villageId) throw new Error("Choose a village before importing its contact list.");
     const contacts = parseCsv(await file.text());
+    const villageId = document.querySelector("#csv-village").value;
+    if (!villageId && contacts.some((contact) => !contact.village &&
+      !contact.mandal && !contact.district && !contact.state && !contact.country)) {
+      throw new Error("Choose a default village or include village and location columns for every row.");
+    }
     const result = await api("/api/contacts/import", {
       method: "POST",
       body: JSON.stringify({ villageId, contacts }),

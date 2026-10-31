@@ -1016,12 +1016,40 @@ async function handleApi(req, res, url) {
     if (!Array.isArray(body.contacts) || body.contacts.length < 1 || body.contacts.length > 5000) {
       return sendJson(res, 400, { error: "Upload between 1 and 5,000 contacts at a time." });
     }
-    const village = findVillage(body.villageId);
+    const defaultVillage = body.villageId ? findVillage(body.villageId) : null;
     const imported = body.contacts.map((entry) => {
       const phone = entry.phone ? cleanPhone(entry.phone) : "";
       const email = cleanEmail(entry.email);
       if (!phone && !email) {
         throw Object.assign(new Error("Each contact needs a phone number, an email address, or both."), { status: 400 });
+      }
+      const location = Object.fromEntries(["mandal", "district", "state", "country"].map((key) => [
+        key,
+        typeof entry[key] === "string" && entry[key].trim()
+          ? cleanLocation(entry[key], key[0].toUpperCase() + key.slice(1))
+          : "",
+      ]));
+      const villageName = typeof entry.village === "string" ? entry.village.trim() : "";
+      let village = defaultVillage;
+      if (villageName || Object.values(location).some(Boolean)) {
+        const normalizedVillageName = villageName.toLocaleLowerCase();
+        const matches = store.villages.filter((candidate) =>
+          (!villageName || candidate.name.toLocaleLowerCase() === normalizedVillageName) &&
+          Object.entries(location).every(([key, value]) =>
+            !value || (candidate[key] || "").toLocaleLowerCase() === value.toLocaleLowerCase(),
+          ),
+        );
+        if (!matches.length) {
+          const description = villageName ? `Village "${villageName}" and its location` : "The location in this row";
+          throw Object.assign(new Error(`${description} do not match a village in the directory. Check the village, mandal, district, state, and country columns.`), { status: 400 });
+        }
+        if (matches.length > 1) {
+          throw Object.assign(new Error(`More than one village matches "${villageName || Object.values(location).filter(Boolean).join(", ")}". Add more location columns to identify the correct village.`), { status: 409 });
+        }
+        village = matches[0];
+      }
+      if (!village) {
+        throw Object.assign(new Error("Choose a default village or include village and location columns for every row."), { status: 400 });
       }
       return {
         name: typeof entry.name === "string" && entry.name.trim()
