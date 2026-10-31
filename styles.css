@@ -150,7 +150,7 @@ button, .file-button { cursor: pointer; }
 .input-action { display: flex; gap: 8px; }
 .input-action input { flex: 1; width: 100%; height: 40px; padding: 0 12px; font-size: 12px; }
 .input-action input::placeholder, .people-tools input::placeholder { color: #a5ada7; }
-.setup-panel input, .setup-panel select {
+.setup-panel input, .setup-panel select, .setup-panel textarea {
   min-width: 0;
   min-height: 38px;
   border: 1px solid #dfe5df;
@@ -161,6 +161,7 @@ button, .file-button { cursor: pointer; }
   padding: 0 10px;
   font-size: 11px;
 }
+.setup-panel textarea { display: block; width: 100%; min-height: 74px; margin-bottom: 8px; padding: 9px 10px; resize: vertical; }
 .setup-panel input:focus, .setup-panel select:focus, .dashboard-filters select:focus {
   border-color: #487a62;
   box-shadow: 0 0 0 3px #487a621c;
@@ -176,8 +177,67 @@ button, .file-button { cursor: pointer; }
 .candidate-form { margin-top: 0; }
 .contact-form { margin-top: 0; }
 .csv-village { width: 100%; margin-top: 10px; }
+.contact-form > input, .contact-form > select { width: 100%; margin-bottom: 10px; }
+.contact-form > label { margin-top: 3px; }
+.contact-address-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 3px 0 6px; }
+.contact-method-field { display: grid; gap: 6px; }
+.contact-method-field label { color: #56615b; font-size: 11px; font-weight: 700; }
+.contact-method-field input { min-width: 0; width: 100%; }
+.contact-form > .field-help { margin: 0 0 10px; }
+.people-setup-panel { max-width: 800px; }
+.location-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 10px; }
+.location-fields > div, .village-edit-form label { display: grid; gap: 5px; }
+.location-fields label, .village-edit-form label { color: #56615b; font-size: 11px; font-weight: 700; }
+.location-fields input { min-width: 0; width: 100%; }
+.village-picker-control { display: grid; gap: 4px; width: 100%; margin: -3px 0 10px; }
+.village-picker-location { color: #738178; font-size: 10px; line-height: 1.5; }
+.village-picker-filters, .village-directory-filters { border: 1px solid #e8ede8; border-radius: 8px; background: #fbfcfb; }
+.village-picker-filters > summary, .village-directory-filters > summary { display: flex; justify-content: space-between; gap: 10px; padding: 9px 10px; color: #53665b; cursor: pointer; font-size: 10px; font-weight: 700; list-style: none; }
+.village-picker-filters > summary::-webkit-details-marker, .village-directory-filters > summary::-webkit-details-marker { display: none; }
+.village-picker-filters > summary span, .village-directory-filters > summary span { color: #8a958e; font-size: 9px; font-weight: 500; }
+.village-picker-filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 10px 10px; }
+.village-picker-filter-fields label { display: grid; gap: 4px; color: #68756d; font-size: 9px; font-weight: 700; }
+.village-picker-filter-fields select { width: 100%; min-width: 0; min-height: 32px; border: 1px solid #dfe5df; border-radius: 7px; background: white; color: var(--ink); padding: 0 8px; font: inherit; font-size: 10px; }
+.village-picker-filter-fields button { justify-self: start; grid-column: 1 / -1; }
+.village-directory-filters { margin-top: 12px; }
+.village-card-identity { display: grid; gap: 3px; min-width: 0; }
+.village-card-identity strong { font-size: 12px; }
+.village-location-meta { display: block; color: #7d8981; font-size: 9px; font-weight: 400; line-height: 1.5; }
 .village-list { display: grid; gap: 8px; margin-top: 12px; }
-.village-card { padding: 10px; border: 1px solid #e8ede8; border-radius: 9px; background: #fbfcfb; }
+.new-village-wards { display: grid; gap: 7px; margin-top: 9px; }
+.new-ward-row { display: flex; gap: 7px; }
+.new-ward-row input { flex: 1; width: 100%; }
+.new-ward-row .delete-contact { flex: 0 0 38px; border: 1px solid #e7ece7; border-radius: 8px; background: white; }
+.village-form-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.village-card { overflow: hidden; border: 1px solid #e8ede8; border-radius: 9px; background: #fbfcfb; }
+.village-card summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; cursor: pointer; list-style: none; }
+.village-card summary::-webkit-details-marker { display: none; }
+.village-card summary::after { content: "+"; color: #789481; font-size: 15px; }
+.village-card[open] summary::after { content: "−"; }
+.village-card summary > span { margin-left: auto; color: #829087; font-size: 10px; }
+.village-card > .ward-chips, .village-card > .add-ward-form { margin-right: 12px; margin-left: 12px; }
+.village-card > .ward-chips { margin-top: 0; }
+.village-card > .add-ward-form { margin-bottom: 12px; }
+.village-edit-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 0 12px 12px; padding: 12px 0; border-top: 1px solid #e8ede8; border-bottom: 1px solid #e8ede8; }
+.village-edit-form > strong, .village-edit-form > button { grid-column: 1 / -1; }
+.village-edit-form input, .village-edit-form select, .village-qr-tools select { width: 100%; min-width: 0; min-height: 34px; border: 1px solid #dfe5df; border-radius: 8px; background: white; padding: 0 9px; font: inherit; font-size: 11px; }
+.village-qr-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 9px; margin: 0 12px 12px; }
+.village-qr-tools > label { display: grid; gap: 5px; color: #56615b; font-size: 11px; font-weight: 700; }
+.village-qr-result { grid-column: 1 / -1; display: grid; justify-items: start; gap: 8px; padding: 12px; border: 1px solid #e8ede8; border-radius: 9px; background: white; }
+.village-qr-result img { width: 192px; height: 192px; }
+.village-qr-result a { overflow-wrap: anywhere; color: var(--forest); font-size: 11px; }
+.village-qr-result small { color: #89938c; font-size: 10px; line-height: 1.5; }
+.qr-place { display: grid; gap: 3px; color: #637168; font-size: 10px; }
+.qr-place strong { color: var(--ink); font-size: 11px; }
+.village-delete-button { margin: 0 12px 12px; padding: 3px 6px; }
+.pending-signups { margin-top: 20px; padding-top: 15px; border-top: 1px solid #e8ede8; }
+.pending-signups h3 { margin: 0; font-size: 13px; }
+.pending-contact-list { display: grid; gap: 8px; margin-top: 10px; }
+.pending-contact { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px; border: 1px solid #e7ece7; border-radius: 9px; background: #fbfcfb; }
+.pending-contact > div:first-child { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; font-size: 11px; }
+.pending-contact span, .pending-contact small { color: #7f8982; font-size: 10px; }
+.pending-contact-actions { display: flex; gap: 6px; }
+.pending-contact-actions .button { min-height: 32px; padding: 0 9px; font-size: 10px; }
 .village-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .village-card-top strong { font-size: 11px; }
 .ward-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0; }
@@ -192,6 +252,9 @@ button, .file-button { cursor: pointer; }
 .field-help { margin: 8px 0 0; color: #89938c; font-size: 10px; line-height: 1.6; }
 .candidate-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
 .candidate-chip { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 6px 8px 6px 10px; border: 1px solid #e3ebe3; border-radius: 7px; background: #f8faf8; font-size: 11px; }
+.candidate-chip-details { display: grid; gap: 3px; }
+.candidate-chip-details > strong { font-size: 11px; }
+.candidate-chip-details > span { color: #66746b; font-size: 9px; }
 .candidate-chip button { border: 0; padding: 0 2px; background: transparent; color: #89938c; font-size: 16px; line-height: 1; }
 .section-divider { height: 1px; margin: 18px 0 16px; background: #edf0ed; }
 .upload-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -216,14 +279,16 @@ button, .file-button { cursor: pointer; }
 .dashboard-panel, .people-panel { padding: 20px 22px; margin-bottom: 15px; }
 .dashboard-heading { align-items: center; }
 .snapshot-label { display: inline-flex; align-items: center; gap: 7px; color: #849087; font-size: 10px; }
+.snapshot-label > span:last-child { display: grid; gap: 2px; }
 .candidate-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 15px; }
 .dashboard-filters { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: #78827c; font-size: 10px; }
 .dashboard-filters label { font-weight: 700; }
 .dashboard-filters select { min-width: 110px; height: 33px; border: 1px solid #dfe5df; border-radius: 8px; background: white; color: var(--ink); padding: 0 9px; font-size: 10px; outline: none; }
 .ward-result-card { min-width: 0; padding: 12px; border: 1px solid #e9ede9; border-radius: 10px; background: #fcfdfc; }
 .ward-result-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
-.ward-result-heading h3 { margin: 0; font-size: 11px; }
+.ward-result-heading h3 { display: grid; gap: 3px; margin: 0; font-size: 11px; }
 .ward-result-heading h3 span, .ward-result-heading > span { color: #879189; font-size: 9px; font-weight: 500; }
+.ward-result-heading h3 .village-location-meta { font-size: 9px; }
 .ward-result-card .result-row + .result-row { margin-top: 11px; }
 .result-row { min-width: 0; }
 .result-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; font-size: 11px; }
@@ -237,6 +302,8 @@ button, .file-button { cursor: pointer; }
 .estimate-disclaimer { margin: 16px 0 0; color: #929a94; font-size: 10px; }
 .people-heading { align-items: center; margin-bottom: 17px; }
 .people-tools { display: flex; gap: 8px; }
+.people-tools .village-picker-control { order: 10; }
+.dashboard-filters .village-picker-control { order: 10; flex-basis: 100%; }
 .people-tools select, .people-tools input { height: 35px; padding: 0 10px; font-size: 10px; }
 .people-tools select { min-width: 108px; border: 1px solid #dfe5df; border-radius: 8px; background: white; color: var(--ink); }
 .people-tools input { width: 190px; }
@@ -250,6 +317,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .person-name { display: block; color: var(--ink); font-weight: 700; }
 .person-phone { display: block; margin-top: 3px; color: #89928c; font-size: 10px; }
 .ward-secondary { display: block; margin-top: 3px; color: #929a94; font-size: 10px; }
+.village-name-cell { display: block; font-weight: 700; }
 .response-pill { display: inline-flex; max-width: 180px; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 20px; background: #f1f3f1; color: #737d75; font-size: 10px; white-space: nowrap; }
 .response-pill small { color: #88938b; font-size: 9px; }
 .response-pill.answered { background: #eaf3eb; color: #35654a; }
@@ -334,6 +402,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .outreach-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .outreach-actions .field-help { flex-basis: 100%; }
 .outreach-actions .button { min-height: 38px; font-size: 11px; }
+.outreach-actions > label { flex-basis: 100%; color: #68746b; font-size: 10px; font-weight: 700; }
+.outreach-actions > select { width: 100%; min-height: 36px; border: 1px solid #dfe5df; border-radius: 8px; background: white; color: var(--ink); padding: 0 10px; font: inherit; font-size: 11px; }
+.outreach-actions > textarea { width: 100%; min-height: 78px; border: 1px solid #dfe5df; border-radius: 8px; background: white; color: var(--ink); padding: 9px 10px; font: inherit; font-size: 12px; line-height: 1.7; resize: vertical; }
+.outreach-actions > textarea:focus, .outreach-actions > select:focus { border-color: #487a62; outline: 2px solid #487a6220; }
+.outreach-actions .voice-upload-label { display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.outreach-actions > audio { width: 100%; min-height: 36px; }
 .people-tools > label:not(.sr-only) { align-self: center; color: #78827c; font-size: 10px; font-weight: 700; }
 .people-tools select:disabled { color: #929a94; }
 .choose-village-prompt { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px dashed #dfe7df; border-radius: 10px; background: #fbfcfb; color: #849087; text-align: center; }
@@ -343,11 +417,31 @@ tbody tr:last-child td { border-bottom: 0; }
 .contact-actions .button { min-height: 30px; padding: 0 8px; font-size: 9px; }
 .call-action { color: #285d41; }
 .message-action { color: #566b8c; }
+.whatsapp-action { color: #287b4b; }
+.email-action { color: #566b8c; }
 .recovery-link { margin: 3px 0 0; }
 .recovery-code { display: block; overflow-wrap: anywhere; margin: 16px 0; padding: 14px; border: 1px dashed #cbd9ce; border-radius: 9px; background: #f5f8f5; color: var(--forest); font-size: 14px; line-height: 1.6; user-select: all; }
 .recovery-dialog-content .dialog-actions { margin-top: 14px; }
 .response-dialog label[for="response-channel"] { margin-top: 12px; }
 .response-dialog #response-channel { margin-bottom: 12px; }
+.response-dialog input:not([type="checkbox"]) { width: 100%; min-height: 39px; margin-bottom: 12px; padding: 0 10px; border: 1px solid #dfe5df; border-radius: 8px; font: inherit; font-size: 12px; }
+.response-dialog form > label:not(.consent-checkbox) { display: block; margin: 0 0 7px; color: #56615b; font-size: 11px; font-weight: 700; }
+.registration-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(140deg, #eaf2eb, #f8f6ef 55%, #f1e8d2); }
+.registration-card { width: min(100%, 500px); padding: 30px; border: 1px solid #ffffffbd; border-radius: 18px; background: #ffffffed; box-shadow: 0 24px 70px #193c2919; }
+.registration-brand { margin-bottom: 24px; }
+.registration-card h1 { margin: 0; font-family: Manrope, "Noto Sans Telugu", sans-serif; font-size: 25px; letter-spacing: -.05em; }
+.registration-card > .muted { margin: 7px 0; font-size: 12px; line-height: 1.6; }
+.registration-card .field-help { margin: 8px 0 15px; }
+.registration-card form > label:not(.registration-consent, .honeypot) { display: block; margin: 12px 0 6px; color: #56615b; font-size: 11px; font-weight: 700; }
+.registration-card form > input { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid #dfe5df; border-radius: 8px; font: inherit; font-size: 12px; }
+.registration-consent { display: flex; align-items: flex-start; gap: 8px; margin: 15px 0; color: #59675f; font-size: 11px; line-height: 1.6; }
+.registration-consent input { flex: 0 0 auto; margin-top: 3px; }
+.honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.registration-footnote { margin: 17px 0 0; color: #89938c; font-size: 10px; line-height: 1.6; }
+.registration-location { display: grid; gap: 4px; margin: 8px 0 12px; padding: 12px; border: 1px solid #e6ece6; border-radius: 9px; background: #f8faf8; }
+.registration-location strong { color: #304b3b; font-size: 13px; }
+.registration-location small { color: #7d8981; font-size: 10px; line-height: 1.5; }
+.registration-location span { color: #57675d; font-size: 10px; font-weight: 700; }
 
 @media (max-width: 800px) {
   .page { width: min(100% - 32px, 620px); padding-top: 30px; }
@@ -372,6 +466,10 @@ tbody tr:last-child td { border-bottom: 0; }
   .bulk-tools .button { min-height: 31px; padding: 0 9px; font-size: 10px; }
   .bulk-tools > span { margin-right: auto; font-weight: 700; }
   .select-all-label, .contact-select-label { display: inline-flex; align-items: center; gap: 7px; }
+  .channel-selection { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; padding: 6px 9px; border: 1px solid #e2e8e2; border-radius: 8px; }
+  .channel-selection legend { padding: 0 4px; color: #68746b; font-size: 9px; font-weight: 700; }
+  .channel-selection label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .channel-selection input, .registration-consent input { accent-color: var(--forest); }
   .contact-select-label { gap: 8px; }
   .contact-select-label input { flex: 0 0 auto; }
   .bulk-tools + .field-help { margin-bottom: 10px; }
@@ -387,12 +485,10 @@ tbody tr:last-child td { border-bottom: 0; }
   .dashboard-filters select { max-width: 230px; }
   [hidden] { display: none !important; }
 
-  @media (max-width: 560px) {
-    .bulk-tools > span { flex-basis: calc(100% - 150px); }
-    .bulk-tools .button { flex: 1 1 45%; }
-    .survey-list-item { display: grid; }
-    .dashboard-filters select { max-width: none; }
-  }
+  .bulk-tools > span { flex-basis: calc(100% - 150px); }
+  .bulk-tools .button { flex: 1 1 45%; }
+  .survey-list-item { display: grid; }
+  .dashboard-filters select { max-width: none; }
   .brand { gap: 9px; }
   .brand strong { font-size: 12px; }
   .brand small { font-size: 9px; }
@@ -426,6 +522,11 @@ tbody tr:last-child td { border-bottom: 0; }
   .welcome-panel { padding: 18px; }
   .section-intro h2 { font-size: 19px; }
   .ward-entry, .phone-fields { flex-direction: column; }
+  .contact-address-fields { grid-template-columns: 1fr; }
+  .location-fields, .village-edit-form { grid-template-columns: 1fr; }
+  .pending-contact { align-items: flex-start; flex-direction: column; }
+  .village-qr-tools { grid-template-columns: 1fr; }
+  .channel-selection { flex-basis: 100%; }
   .phone-fields-location button { align-self: stretch; }
   th, td { padding: 9px 7px; }
   th { font-size: 8px; }

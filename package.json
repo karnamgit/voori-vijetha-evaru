@@ -5,5 +5,8 @@
   "description": "Admin-only village election survey and dashboard",
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   }
 }

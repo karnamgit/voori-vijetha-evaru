@@ -2,6 +2,7 @@ const http = require("node:http");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const QRCode = require("qrcode");
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -18,6 +19,9 @@ const GOOGLE_ADMIN_EMAIL = (process.env.GOOGLE_ADMIN_EMAIL || "").trim().toLower
 
 let store;
 let writeQueue = Promise.resolve();
+const registrationRequests = new Map();
+const registrationLimitWindow = 15 * 60 * 1000;
+const registrationLimit = 40;
 
 function sendJson(res, status, value, headers = {}) {
   res.writeHead(status, {
@@ -162,6 +166,21 @@ function cleanText(value, label, maxLength = 100) {
   return result;
 }
 
+function cleanVoiceRecording(value) {
+  if (typeof value !== "string" || value.length > 4_000_000) {
+    throw Object.assign(new Error("Voice recording must be smaller than 3 MB."), { status: 400 });
+  }
+  const match = value.match(/^data:(audio\/(?:webm|ogg|mp4|wav|x-wav|mpeg|aac|x-m4a|m4a|aiff|3gpp|3gpp2))(?:;[a-z0-9=._-]+)*;base64,([A-Za-z0-9+/]+={0,2})$/i);
+  if (!match) {
+    throw Object.assign(new Error("Use a supported audio recording format."), { status: 400 });
+  }
+  const audio = Buffer.from(match[2], "base64");
+  if (!audio.length || audio.length > 3_000_000 || audio.toString("base64") !== match[2]) {
+    throw Object.assign(new Error("Voice recording must be a valid audio file smaller than 3 MB."), { status: 400 });
+  }
+  return value;
+}
+
 function cleanPhone(value) {
   if (typeof value !== "string") {
     throw Object.assign(new Error("A phone number is required."), { status: 400 });
@@ -173,6 +192,36 @@ function cleanPhone(value) {
     });
   }
   return phone;
+}
+
+function cleanEmail(value) {
+  if (value === undefined || value === null || value === "") return "";
+  if (typeof value !== "string") {
+    throw Object.assign(new Error("Enter a valid email address."), { status: 400 });
+  }
+  const email = value.trim().toLowerCase();
+  if (!email) return "";
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw Object.assign(new Error("Enter a valid email address."), { status: 400 });
+  }
+  return email;
+}
+
+function cleanLocation(value, label) {
+  return cleanText(value, label, 100);
+}
+
+function villageLocation(village) {
+  return {
+    mandal: village.mandal || "",
+    district: village.district || "",
+    state: village.state || "",
+    country: village.country || "",
+  };
+}
+
+function villageNameLabel(village) {
+  return village.name;
 }
 
 function findContact(id) {
@@ -195,6 +244,25 @@ function findWard(village, value) {
   return ward;
 }
 
+function addQuestionTemplate(villageId, question) {
+  const normalized = question.normalize("NFC").toLocaleLowerCase();
+  const existing = store.questionTemplates.find((entry) =>
+    entry.villageId === villageId &&
+    entry.question.normalize("NFC").toLocaleLowerCase() === normalized,
+  );
+  if (existing) return existing;
+  const template = { id: crypto.randomUUID(), villageId, question, createdAt: new Date().toISOString() };
+  store.questionTemplates.push(template);
+  return template;
+}
+
+function questionTemplateScope(value) {
+  if (value !== undefined && value !== "village" && value !== "global") {
+    throw Object.assign(new Error("Question template scope must be village or global."), { status: 400 });
+  }
+  return value || "village";
+}
+
 function migrateStore(data) {
   if (!data || !Array.isArray(data.candidates) || !Array.isArray(data.contacts)) {
     throw new Error("Data file must contain candidate and contact lists.");
@@ -203,6 +271,10 @@ function migrateStore(data) {
   const migratedVillages = villages.map((village) => ({
     id: village.id || crypto.randomUUID(),
     name: cleanText(village.name, "Village name", 100),
+    mandal: typeof village.mandal === "string" ? village.mandal : "",
+    district: typeof village.district === "string" ? village.district : "",
+    state: typeof village.state === "string" ? village.state : "",
+    country: typeof village.country === "string" ? village.country : "",
     wards: [...new Set((Array.isArray(village.wards) ? village.wards : []).map((ward) => cleanText(String(ward), "Ward", 40)))],
   }));
   for (const contact of data.contacts) {
@@ -211,7 +283,7 @@ function migrateStore(data) {
         entry.name.toLocaleLowerCase() === contact.village.trim().toLocaleLowerCase(),
       );
       if (!village) {
-        village = { id: crypto.randomUUID(), name: cleanText(contact.village, "Village name", 100), wards: [] };
+        village = { id: crypto.randomUUID(), name: cleanText(contact.village, "Village name", 100), mandal: "", district: "", state: "", country: "", wards: [] };
         migratedVillages.push(village);
       }
       contact.villageId = village.id;
@@ -269,7 +341,36 @@ function migrateStore(data) {
     title: cleanText(survey.title || "Survey", "Survey name", 100),
     createdAt: survey.createdAt || new Date().toISOString(),
     candidateIds: Array.isArray(survey.candidateIds) ? survey.candidateIds : [],
+    question: typeof survey.question === "string" && survey.question.trim()
+      ? cleanText(survey.question, "Survey question", 400)
+      : "ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?",
+    ...(typeof survey.voiceRecording === "string" ? { voiceRecording: survey.voiceRecording } : {}),
   }));
+  const questionTemplates = Array.isArray(data.questionTemplates)
+    ? data.questionTemplates
+      .filter((entry) => entry.villageId === null || migratedVillages.some((village) => village.id === entry.villageId))
+      .map((entry) => ({
+        id: entry.id || crypto.randomUUID(),
+        villageId: entry.villageId || null,
+        question: cleanText(entry.question, "Survey question", 400),
+        createdAt: entry.createdAt || new Date().toISOString(),
+      }))
+    : [];
+  if (!Array.isArray(data.questionTemplates)) {
+    for (const survey of migratedSurveys) {
+      if (!questionTemplates.some((entry) =>
+        entry.villageId === survey.villageId &&
+        entry.question.normalize("NFC").toLocaleLowerCase() === survey.question.normalize("NFC").toLocaleLowerCase(),
+      )) {
+        questionTemplates.push({
+          id: crypto.randomUUID(),
+          villageId: survey.villageId,
+          question: survey.question,
+          createdAt: survey.createdAt,
+        });
+      }
+    }
+  }
   for (const contact of data.contacts) {
     if (!Array.isArray(contact.responses)) contact.responses = [];
     if (contact.response && !contact.responses.length) {
@@ -285,6 +386,11 @@ function migrateStore(data) {
         });
       }
     }
+    contact.responses = contact.responses.map((response) => ({
+      ...response,
+      villageId: response.villageId || contact.villageId || null,
+      ward: response.ward || contact.ward || "",
+    }));
     delete contact.response;
     delete contact.status;
     delete contact.respondedAt;
@@ -303,10 +409,15 @@ function migrateStore(data) {
     contacts: data.contacts.map((contact) => ({
       ...contact,
       id: contact.id || crypto.randomUUID(),
+      phone: contact.phone || "",
+      email: contact.email || "",
       villageId: contact.villageId || null,
+      approvalStatus: contact.approvalStatus || "approved",
+      registrationConsentAt: contact.registrationConsentAt || null,
       responses: contact.responses,
     })),
     surveys: migratedSurveys,
+    questionTemplates,
     auth: data.auth || null,
     users: Array.isArray(data.users) ? data.users : [],
   };
@@ -319,8 +430,14 @@ function getViewerData() {
     if (!village) continue;
     for (const ward of village.wards) {
       const responses = store.contacts.flatMap((contact) =>
-        contact.villageId === village.id && contact.ward === ward
+        contact.approvalStatus !== "pending" && contact.responses.some((response) =>
+          (response.villageId || contact.villageId) === village.id &&
+          (response.ward || contact.ward) === ward &&
+          response.surveyId === survey.id && survey.candidateIds.includes(response.response),
+        )
           ? contact.responses.filter((response) =>
+            (response.villageId || contact.villageId) === village.id &&
+            (response.ward || contact.ward) === ward &&
             response.surveyId === survey.id && survey.candidateIds.includes(response.response),
           )
           : [],
@@ -346,7 +463,9 @@ function getViewerData() {
   }
   return {
     viewer: true,
-    villages: store.villages.map(({ id, name, wards }) => ({ id, name, wards })),
+    villages: store.villages.map(({ id, name, mandal, district, state, country, wards }) => ({
+      id, name, mandal, district, state, country, wards,
+    })),
     candidates: store.candidates.map(({ id, name, villageId }) => ({ id, name, villageId })),
     surveys: store.surveys,
     contacts: [],
@@ -357,6 +476,68 @@ function getViewerData() {
 async function handleApi(req, res, url) {
   if (req.method !== "GET" && !checkOrigin(req)) {
     return sendJson(res, 403, { error: "Request origin was not accepted." });
+  }
+
+  if (url.pathname === "/api/public/registration" && req.method === "GET") {
+    const village = store.villages.find((entry) => entry.id === url.searchParams.get("villageId"));
+    const ward = url.searchParams.get("ward");
+    if (!village || !village.wards.includes(ward)) {
+      return sendJson(res, 404, { error: "This registration link is not available." });
+    }
+    return sendJson(res, 200, {
+      village: { id: village.id, name: villageNameLabel(village), ...villageLocation(village) },
+      ward,
+    });
+  }
+
+  if (url.pathname === "/api/public/registrations" && req.method === "POST") {
+    const address = req.socket.remoteAddress || "unknown";
+    const now = Date.now();
+    const recent = (registrationRequests.get(address) || []).filter(
+      (timestamp) => now - timestamp < registrationLimitWindow,
+    );
+    if (recent.length >= registrationLimit) {
+      registrationRequests.set(address, recent);
+      return sendJson(res, 429, { error: "Too many registrations from this connection. Please try again later." });
+    }
+    registrationRequests.set(address, [...recent, now]);
+    const body = await readBody(req);
+    if (typeof body.website === "string" && body.website.trim()) {
+      return sendJson(res, 201, { ok: true });
+    }
+    if (body.consent !== true) {
+      return sendJson(res, 400, { error: "Agree to the contact permission before submitting." });
+    }
+    const village = findVillage(body.villageId);
+    const ward = findWard(village, body.ward);
+    const phone = body.phone ? cleanPhone(body.phone) : "";
+    const email = cleanEmail(body.email);
+    if (!phone && !email) {
+      return sendJson(res, 400, { error: "Enter a phone number, an email address, or both." });
+    }
+    if (store.contacts.some((contact) =>
+      contact.villageId === village.id &&
+      ((phone && contact.phone === phone) || (email && contact.email === email)),
+    )) {
+      return sendJson(res, 409, { error: "These contact details are already registered in this village. Please contact the survey admin if they need updating." });
+    }
+    store.contacts.push({
+      id: crypto.randomUUID(),
+      name: typeof body.name === "string" && body.name.trim()
+        ? cleanText(body.name, "Name", 80)
+        : "",
+      phone,
+      email,
+      villageId: village.id,
+      ward,
+      approvalStatus: "pending",
+      registrationConsentAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      source: "qr",
+      responses: [],
+    });
+    await saveStore();
+    return sendJson(res, 201, { ok: true });
   }
 
   if (url.pathname === "/api/login" && req.method === "POST") {
@@ -575,10 +756,52 @@ async function handleApi(req, res, url) {
     });
   }
 
+  const qrMatch = url.pathname.match(/^\/api\/villages\/([^/]+)\/registration-qr$/);
+  if (qrMatch && req.method === "GET") {
+    const village = findVillage(decodeURIComponent(qrMatch[1]));
+    const ward = url.searchParams.get("ward");
+    if (!village.wards.includes(ward)) return sendJson(res, 404, { error: "Ward not found." });
+    let baseUrl;
+    try {
+      baseUrl = new URL(process.env.PUBLIC_BASE_URL || `http://${req.headers.host || "localhost"}`);
+    } catch {
+      return sendJson(res, 500, { error: "Set PUBLIC_BASE_URL to a valid app URL before generating registration QR codes." });
+    }
+    if (
+      !["http:", "https:"].includes(baseUrl.protocol) ||
+      baseUrl.username || baseUrl.password || baseUrl.search || baseUrl.hash ||
+      baseUrl.pathname !== "/"
+    ) {
+      return sendJson(res, 500, { error: "PUBLIC_BASE_URL must be an HTTP(S) origin without credentials, path, query, or fragment." });
+    }
+    const registrationUrl = new URL("/self-register", baseUrl);
+    registrationUrl.search = new URLSearchParams({ villageId: village.id, ward }).toString();
+    const image = await QRCode.toDataURL(registrationUrl.toString(), {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 256,
+    });
+    return sendJson(res, 200, {
+      image,
+      url: registrationUrl.toString(),
+      villageLabel: villageNameLabel(village),
+      villageLocation: villageLocation(village),
+      ward,
+    });
+  }
+
   if (url.pathname === "/api/surveys" && req.method === "POST") {
     const body = await readBody(req);
     const village = findVillage(body.villageId);
     const title = cleanText(body.title, "Survey name", 100);
+    const question = cleanText(
+      typeof body.question === "string" ? body.question : "",
+      "Survey question",
+      400,
+    );
+    const templateVillageId = questionTemplateScope(body.questionScope) === "global"
+      ? null
+      : village.id;
     const candidateIds = Array.isArray(body.candidateIds) ? [...new Set(body.candidateIds)] : [];
     if (candidateIds.length < 2) {
       return sendJson(res, 400, { error: "Select at least two candidates for a survey round." });
@@ -595,20 +818,68 @@ async function handleApi(req, res, url) {
       title,
       createdAt: new Date().toISOString(),
       candidateIds,
+      question,
     };
     store.surveys.push(survey);
+    addQuestionTemplate(templateVillageId, question);
     await saveStore();
     return sendJson(res, 201, { ok: true, survey });
+  }
+
+  if (url.pathname === "/api/questions" && req.method === "POST") {
+    const body = await readBody(req);
+    const village = findVillage(body.villageId);
+    const question = cleanText(body.question, "Survey question", 400);
+    const template = addQuestionTemplate(
+      questionTemplateScope(body.scope) === "global" ? null : village.id,
+      question,
+    );
+    await saveStore();
+    return sendJson(res, 201, { ok: true, template });
+  }
+
+  const questionMatch = url.pathname.match(/^\/api\/questions\/([^/]+)$/);
+  if (questionMatch && req.method === "DELETE") {
+    const templateId = decodeURIComponent(questionMatch[1]);
+    const template = store.questionTemplates.find((entry) => entry.id === templateId);
+    if (!template) return sendJson(res, 404, { error: "Saved survey question not found." });
+    store.questionTemplates = store.questionTemplates.filter((entry) => entry.id !== templateId);
+    await saveStore();
+    return sendJson(res, 200, { ok: true });
+  }
+
+  const surveyQuestionMatch = url.pathname.match(/^\/api\/surveys\/([^/]+)\/question$/);
+  if (surveyQuestionMatch && req.method === "POST") {
+    const survey = store.surveys.find((entry) => entry.id === decodeURIComponent(surveyQuestionMatch[1]));
+    if (!survey) return sendJson(res, 404, { error: "Survey round not found." });
+    const body = await readBody(req);
+    const question = cleanText(body.question, "Survey question", 400);
+    if (survey.question !== question) delete survey.voiceRecording;
+    survey.question = question;
+    addQuestionTemplate(
+      questionTemplateScope(body.questionScope) === "global" ? null : survey.villageId,
+      question,
+    );
+    await saveStore();
+    return sendJson(res, 200, { ok: true, survey });
+  }
+
+  const surveyVoiceMatch = url.pathname.match(/^\/api\/surveys\/([^/]+)\/voice$/);
+  if (surveyVoiceMatch && req.method === "POST") {
+    const survey = store.surveys.find((entry) => entry.id === decodeURIComponent(surveyVoiceMatch[1]));
+    if (!survey) return sendJson(res, 404, { error: "Survey round not found." });
+    const body = await readBody(req);
+    survey.voiceRecording = cleanVoiceRecording(body.voiceRecording);
+    await saveStore();
+    return sendJson(res, 200, { ok: true });
   }
 
   const surveyMatch = url.pathname.match(/^\/api\/surveys\/([^/]+)$/);
   if (surveyMatch && req.method === "DELETE") {
     const survey = store.surveys.find((entry) => entry.id === decodeURIComponent(surveyMatch[1]));
     if (!survey) return sendJson(res, 404, { error: "Survey round not found." });
-    if (store.contacts.some((contact) =>
-      contact.responses.some((response) => response.surveyId === survey.id),
-    )) {
-      return sendJson(res, 409, { error: "This survey round has saved responses and cannot be deleted." });
+    for (const contact of store.contacts) {
+      contact.responses = contact.responses.filter((response) => response.surveyId !== survey.id);
     }
     store.surveys = store.surveys.filter((entry) => entry.id !== survey.id);
     await saveStore();
@@ -618,22 +889,56 @@ async function handleApi(req, res, url) {
   if (url.pathname === "/api/villages" && req.method === "POST") {
     const body = await readBody(req);
     const name = cleanText(body.name, "Village name", 100);
+    const location = {
+      mandal: cleanLocation(body.mandal, "Mandal"),
+      district: cleanLocation(body.district, "District"),
+      state: cleanLocation(body.state, "State"),
+      country: cleanLocation(body.country, "Country"),
+    };
     const wards = Array.isArray(body.wards)
       ? body.wards.map((ward) => cleanText(ward, "Ward", 40)).filter((ward, index, list) =>
         list.findIndex((entry) => entry.toLocaleLowerCase() === ward.toLocaleLowerCase()) === index,
       )
       : [];
     if (!wards.length) return sendJson(res, 400, { error: "Add at least one ward to the village." });
-    if (store.villages.some((village) => village.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
-      return sendJson(res, 409, { error: "That village already exists." });
+    if (store.villages.some((village) =>
+      village.name.toLocaleLowerCase() === name.toLocaleLowerCase() &&
+      ["mandal", "district", "state", "country"].every((key) =>
+        (village[key] || "").toLocaleLowerCase() === location[key].toLocaleLowerCase(),
+      ),
+    )) {
+      return sendJson(res, 409, { error: "That village already exists at this location." });
     }
-    const village = { id: crypto.randomUUID(), name, wards };
+    const village = { id: crypto.randomUUID(), name, ...location, wards };
     store.villages.push(village);
     await saveStore();
     return sendJson(res, 201, { ok: true, village });
   }
 
   const villageMatch = url.pathname.match(/^\/api\/villages\/([^/]+)$/);
+  if (villageMatch && req.method === "PUT") {
+    const village = findVillage(decodeURIComponent(villageMatch[1]));
+    const body = await readBody(req);
+    const name = cleanText(body.name, "Village name", 100);
+    const location = {
+      mandal: cleanLocation(body.mandal, "Mandal"),
+      district: cleanLocation(body.district, "District"),
+      state: cleanLocation(body.state, "State"),
+      country: cleanLocation(body.country, "Country"),
+    };
+    if (store.villages.some((entry) =>
+      entry.id !== village.id &&
+      entry.name.toLocaleLowerCase() === name.toLocaleLowerCase() &&
+      ["mandal", "district", "state", "country"].every((key) =>
+        (entry[key] || "").toLocaleLowerCase() === location[key].toLocaleLowerCase(),
+      ),
+    )) {
+      return sendJson(res, 409, { error: "That village already exists at this location." });
+    }
+    Object.assign(village, { name, ...location });
+    await saveStore();
+    return sendJson(res, 200, { ok: true, village });
+  }
   if (villageMatch && req.method === "DELETE") {
     const village = findVillage(decodeURIComponent(villageMatch[1]));
     if (
@@ -713,26 +1018,52 @@ async function handleApi(req, res, url) {
     }
     const village = findVillage(body.villageId);
     const imported = body.contacts.map((entry) => {
+      const phone = entry.phone ? cleanPhone(entry.phone) : "";
+      const email = cleanEmail(entry.email);
+      if (!phone && !email) {
+        throw Object.assign(new Error("Each contact needs a phone number, an email address, or both."), { status: 400 });
+      }
       return {
         name: typeof entry.name === "string" && entry.name.trim()
           ? cleanText(entry.name, "Contact name", 80)
           : "",
-        phone: cleanPhone(entry.phone),
+        phone,
+        email,
         villageId: village.id,
         ward: findWard(village, entry.ward),
       };
     });
     let added = 0;
     let updated = 0;
+    const originalIds = new Set(store.contacts.map((contact) => contact.id));
+    const stagedContacts = store.contacts.map((contact) => ({ ...contact }));
+    const stagedUpdates = new Map();
     for (const entry of imported) {
-      const existing = store.contacts.find((contact) =>
-        contact.phone === entry.phone && contact.villageId === entry.villageId,
+      const matches = stagedContacts.filter((contact) =>
+        contact.villageId === entry.villageId &&
+        ((entry.phone && contact.phone === entry.phone) || (entry.email && contact.email === entry.email)),
       );
+      if (matches.length > 1) {
+        return sendJson(res, 409, { error: "This row matches different existing people by phone and email. Resolve the duplicate contact records before importing." });
+      }
+      const existing = matches[0];
+      if (stagedContacts.some((contact) =>
+        contact.villageId === entry.villageId && contact.id !== existing?.id &&
+        ((entry.phone && contact.phone === entry.phone) || (entry.email && contact.email === entry.email)),
+      )) {
+        return sendJson(res, 409, { error: "A phone number or email address is already assigned to another person in this village." });
+      }
       if (existing) {
-        Object.assign(existing, entry);
+        const mergedEntry = {
+          ...entry,
+          phone: entry.phone || existing.phone,
+          email: entry.email || existing.email,
+        };
+        Object.assign(existing, mergedEntry);
+        if (originalIds.has(existing.id)) stagedUpdates.set(existing.id, mergedEntry);
         updated++;
       } else {
-        store.contacts.push({
+        stagedContacts.push({
           id: crypto.randomUUID(),
           ...entry,
           responses: [],
@@ -740,6 +1071,10 @@ async function handleApi(req, res, url) {
         added++;
       }
     }
+    for (const [id, entry] of stagedUpdates) {
+      Object.assign(store.contacts.find((contact) => contact.id === id), entry);
+    }
+    store.contacts.push(...stagedContacts.filter((contact) => !originalIds.has(contact.id)));
     await saveStore();
     return sendJson(res, 200, { added, updated });
   }
@@ -747,14 +1082,22 @@ async function handleApi(req, res, url) {
   if (url.pathname === "/api/contacts" && req.method === "POST") {
     const body = await readBody(req);
     const village = findVillage(body.villageId);
-    const phone = cleanPhone(body.phone);
-    if (store.contacts.some((contact) => contact.phone === phone && contact.villageId === village.id)) {
-      return sendJson(res, 409, { error: "That phone number is already on this village’s survey list." });
+    const phone = body.phone ? cleanPhone(body.phone) : "";
+    const email = cleanEmail(body.email);
+    if (!phone && !email) {
+      return sendJson(res, 400, { error: "Add a phone number, an email address, or both." });
+    }
+    if (store.contacts.some((contact) =>
+      contact.villageId === village.id &&
+      ((phone && contact.phone === phone) || (email && contact.email === email)),
+    )) {
+      return sendJson(res, 409, { error: "That phone number or email address is already on this village’s survey list." });
     }
     const contact = {
       id: crypto.randomUUID(),
       name: typeof body.name === "string" && body.name.trim() ? cleanText(body.name, "Contact name", 80) : "",
       phone,
+      email,
       villageId: village.id,
       ward: findWard(village, body.ward),
       responses: [],
@@ -765,6 +1108,35 @@ async function handleApi(req, res, url) {
   }
 
   const contactMatch = url.pathname.match(/^\/api\/contacts\/([^/]+)(?:\/response)?$/);
+  if (contactMatch && req.method === "PUT" && !url.pathname.endsWith("/response")) {
+    const contact = findContact(decodeURIComponent(contactMatch[1]));
+    const body = await readBody(req);
+    const village = findVillage(body.villageId);
+    const ward = findWard(village, body.ward);
+    const phone = body.phone ? cleanPhone(body.phone) : "";
+    const email = cleanEmail(body.email);
+    if (!phone && !email) {
+      return sendJson(res, 400, { error: "Add a phone number, an email address, or both." });
+    }
+    if (store.contacts.some((entry) =>
+      entry.id !== contact.id &&
+      entry.villageId === village.id &&
+      ((phone && entry.phone === phone) || (email && entry.email === email)),
+    )) {
+      return sendJson(res, 409, { error: "That phone number or email address is already assigned to another person in this village." });
+    }
+    Object.assign(contact, {
+      name: typeof body.name === "string" && body.name.trim()
+        ? cleanText(body.name, "Name", 80)
+        : "",
+      phone,
+      email,
+      villageId: village.id,
+      ward,
+    });
+    await saveStore();
+    return sendJson(res, 200, { ok: true });
+  }
   if (contactMatch && req.method === "DELETE" && !url.pathname.endsWith("/response")) {
     const contact = findContact(decodeURIComponent(contactMatch[1]));
     store.contacts = store.contacts.filter((entry) => entry.id !== contact.id);
@@ -774,6 +1146,9 @@ async function handleApi(req, res, url) {
 
   if (contactMatch && url.pathname.endsWith("/response") && req.method === "POST") {
     const contact = findContact(decodeURIComponent(contactMatch[1]));
+    if (contact.approvalStatus === "pending") {
+      return sendJson(res, 409, { error: "Approve this person's registration before saving a survey response." });
+    }
     const body = await readBody(req);
     const response = body.response;
     const channel = body.channel;
@@ -781,8 +1156,8 @@ async function handleApi(req, res, url) {
       entry.id === body.surveyId && entry.villageId === contact.villageId,
     );
     if (!survey) return sendJson(res, 400, { error: "Choose an active survey round for this village." });
-    if (!["phone", "message", "voice"].includes(channel)) {
-      return sendJson(res, 400, { error: "Choose phone call, text message, or spoken response." });
+    if (!["phone", "message", "voice", "email"].includes(channel)) {
+      return sendJson(res, 400, { error: "Choose phone call, text message, email reply, or spoken response." });
     }
     const isCandidate = typeof response === "string" && survey.candidateIds.includes(response);
     if (!isCandidate && !["undecided", "declined", "no-answer"].includes(response)) {
@@ -798,6 +1173,8 @@ async function handleApi(req, res, url) {
       response,
       channel,
       respondedAt: now,
+      villageId: contact.villageId,
+      ward: contact.ward,
       consentGiven: needsConsent,
       consentAt: needsConsent ? now : null,
     };
@@ -808,12 +1185,33 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
 
+  const approvalMatch = url.pathname.match(/^\/api\/contacts\/([^/]+)\/approval$/);
+  if (approvalMatch && req.method === "POST") {
+    const contact = findContact(decodeURIComponent(approvalMatch[1]));
+    if (contact.approvalStatus !== "pending") {
+      return sendJson(res, 409, { error: "This registration is no longer awaiting review." });
+    }
+    const body = await readBody(req);
+    if (body.status === "approved") {
+      contact.approvalStatus = "approved";
+      contact.approvedAt = new Date().toISOString();
+    } else if (body.status === "rejected") {
+      store.contacts = store.contacts.filter((entry) => entry.id !== contact.id);
+    } else {
+      return sendJson(res, 400, { error: "Choose approve or reject." });
+    }
+    await saveStore();
+    return sendJson(res, 200, { ok: true });
+  }
+
   return sendJson(res, 404, { error: "API route not found." });
 }
 
 const publicFiles = {
   "/": ["index.html", "text/html; charset=utf-8"],
+  "/self-register": ["self-register.html", "text/html; charset=utf-8"],
   "/app.js": ["app.js", "text/javascript; charset=utf-8"],
+  "/self-register.js": ["self-register.js", "text/javascript; charset=utf-8"],
   "/styles.css": ["styles.css", "text/css; charset=utf-8"],
 };
 
@@ -825,7 +1223,7 @@ async function start() {
     data = JSON.parse(await fs.readFile(DATA_FILE, "utf8"));
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    data = { version: 4, villages: [], candidates: [], contacts: [], surveys: [], users: [], auth: null };
+    data = { version: 4, villages: [], candidates: [], contacts: [], surveys: [], questionTemplates: [], users: [], auth: null };
   }
   store = migrateStore(data);
   if (!store.auth) {
@@ -883,7 +1281,7 @@ async function start() {
         "Content-Type": asset[1],
         "Cache-Control": "no-cache",
         "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": "default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+        "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; media-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
         "Referrer-Policy": "same-origin",
       });
       return res.end(file);

@@ -80,7 +80,10 @@
 
         <nav class="primary-tabs" role="tablist" aria-label="Survey sections">
           <button id="tab-button-overview" class="primary-tab active" type="button" role="tab" aria-selected="true" data-tab="overview"><span aria-hidden="true">⌂</span> Overview</button>
-          <button id="tab-button-villages" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="villages"><span aria-hidden="true">▦</span> Villages &amp; candidates</button>
+          <button id="tab-button-villages" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="villages"><span aria-hidden="true">▦</span> Villages</button>
+          <button id="tab-button-candidates" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="candidates"><span aria-hidden="true">♟</span> Candidates</button>
+          <button id="tab-button-surveys" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="surveys"><span aria-hidden="true">＋</span> Create survey</button>
+          <button id="tab-button-people" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="people"><span aria-hidden="true">☷</span> Add people</button>
           <button id="tab-button-calls" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="calls"><span aria-hidden="true">☎</span> Call &amp; record</button>
           <button id="tab-button-results" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="results"><span aria-hidden="true">▥</span> Survey results</button>
         </nav>
@@ -119,12 +122,12 @@
               <p>Set up villages and candidates, contact people using their phone app, then review responses by ward.</p>
             </div>
             <div class="workflow-steps">
-              <div><span>01</span><strong>Set up</strong><small>Add villages, wards, candidates and phone numbers.</small></div>
-              <div><span>02</span><strong>Contact</strong><small>Call or draft a text, then record the person’s answer.</small></div>
+              <div><span>01</span><strong>Set up</strong><small>Add villages, candidates, survey rounds and people in separate sections.</small></div>
+              <div><span>02</span><strong>Contact</strong><small>Call, message, email or WhatsApp, then record the answer.</small></div>
               <div><span>03</span><strong>Review</strong><small>Compare recorded preferences by village and ward.</small></div>
             </div>
             <div class="quick-actions">
-              <button class="button button-primary" type="button" data-open-tab="villages">Set up villages <span aria-hidden="true">→</span></button>
+              <button class="button button-primary" type="button" data-open-tab="villages">Add a village <span aria-hidden="true">→</span></button>
               <button class="button button-outline" type="button" data-open-tab="calls">Go to call list</button>
             </div>
           </section>
@@ -132,80 +135,141 @@
 
         <section id="tab-villages" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-villages" hidden>
           <section class="section-intro">
-            <p class="eyebrow">01 · SET UP YOUR SURVEY</p>
-            <h2>Villages, wards &amp; candidates</h2>
-            <p>Create a village first. Then manage its candidate list and resident phone numbers.</p>
+            <p class="eyebrow">01 · VILLAGE SETUP</p>
+            <h2>Add villages and wards</h2>
+            <p>Add the wards that belong to a village. Expand a village below only when you need to manage its wards.</p>
           </section>
-          <div class="content-grid village-workspace">
-            <section class="panel setup-panel">
+          <section class="panel setup-panel village-workspace">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">GET STARTED</p>
-                <h2>Set up your survey</h2>
+                <p class="eyebrow">VILLAGE DIRECTORY</p>
+                <h2>New village</h2>
               </div>
               <span class="step-badge">01</span>
             </div>
 
             <form id="village-form" class="village-form">
-              <label for="village-name">Add a village</label>
+              <label for="village-name">Village name</label>
               <input id="village-name" name="name" maxlength="100" placeholder="Enter village name" required>
-              <div class="ward-entry">
-                <input id="village-wards" name="wards" placeholder="Ward names/numbers, e.g. 1, 2, 3" required>
-                <button class="button button-dark" type="submit">Add village <span aria-hidden="true">+</span></button>
+              <div class="location-fields">
+                <div><label for="village-mandal">Mandal</label><input id="village-mandal" name="mandal" maxlength="100" placeholder="Mandal" required></div>
+                <div><label for="village-district">District</label><input id="village-district" name="district" maxlength="100" placeholder="District" required></div>
+                <div><label for="village-state">State</label><input id="village-state" name="state" maxlength="100" placeholder="State" required></div>
+                <div><label for="village-country">Country</label><input id="village-country" name="country" maxlength="100" value="India" required></div>
               </div>
-              <p class="field-help">Add the village and its wards together. You can add more wards below later.</p>
+              <div id="new-village-wards" class="new-village-wards" aria-label="Village wards">
+                <div class="new-ward-row"><input name="ward" maxlength="40" aria-label="Ward name or number" placeholder="Ward name or number (e.g. 1)" required></div>
+              </div>
+              <div class="village-form-actions">
+                <button id="add-village-ward" class="button button-outline" type="button">+ Add another ward</button>
+                <button class="button button-dark" type="submit">Save village <span aria-hidden="true">→</span></button>
+              </div>
+              <p class="field-help">Add as many wards as you need. You can add more or remove unused wards later.</p>
             </form>
+            <details id="village-directory-filters" class="village-directory-filters">
+              <summary>Filter village directory by location <span>Optional</span></summary>
+              <div class="village-picker-filter-fields">
+                <label>Country<select data-directory-location-filter="country" aria-label="Filter directory by country"></select></label>
+                <label>State<select data-directory-location-filter="state" aria-label="Filter directory by state"></select></label>
+                <label>District<select data-directory-location-filter="district" aria-label="Filter directory by district"></select></label>
+                <label>Mandal<select data-directory-location-filter="mandal" aria-label="Filter directory by mandal"></select></label>
+                <button class="text-button" type="button" data-clear-directory-filters>Clear location filters</button>
+              </div>
+            </details>
             <div id="village-list" class="village-list" aria-live="polite"></div>
+          </section>
+        </section>
 
-            <div class="section-divider"></div>
-
+        <section id="tab-candidates" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-candidates" hidden>
+          <section class="section-intro">
+            <p class="eyebrow">02 · CANDIDATE LIST</p>
+            <h2>Add candidates</h2>
+            <p>Keep candidate lists separate for each village. Add every candidate before creating a survey round.</p>
+          </section>
+          <section class="panel setup-panel">
             <form id="candidate-form" class="candidate-form">
-              <label for="candidate-name">Add candidates</label>
+              <label for="candidate-village">Village</label>
               <select id="candidate-village" required aria-label="Candidate's village"></select>
+              <label for="candidate-name">Candidate name</label>
               <div class="input-action">
                 <input id="candidate-name" name="name" maxlength="80" placeholder="Enter a candidate name" required>
-                <button class="button button-dark" type="submit">Add <span aria-hidden="true">+</span></button>
+                <button class="button button-dark" type="submit">Add candidate <span aria-hidden="true">+</span></button>
               </div>
               <div id="candidate-list" class="candidate-list" aria-live="polite"></div>
-              <p class="field-help">Add every candidate before starting calls. Candidate names can be in తెలుగు too.</p>
+              <p class="field-help">Candidate names can be entered in తెలుగు too.</p>
             </form>
+          </section>
+        </section>
 
-            <div class="section-divider"></div>
-
+        <section id="tab-surveys" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-surveys" hidden>
+          <section class="section-intro">
+            <p class="eyebrow">03 · SURVEY ROUNDS</p>
+            <h2>Create a survey round</h2>
+            <p>Each round has its own village, selected candidates, question and results.</p>
+          </section>
+          <section class="panel setup-panel">
               <form id="survey-form" class="candidate-form">
-                <label for="survey-village">Create a survey round</label>
+                <label for="survey-village">Village for this survey</label>
                 <select id="survey-village" required aria-label="Survey village"></select>
-                <input id="survey-title" maxlength="100" placeholder="Survey name, e.g. Candidate comparison 1" required>
+                <label for="survey-title">Survey name</label>
+                <input id="survey-title" maxlength="100" placeholder="e.g. Candidate comparison 1" required>
+                <label for="survey-question-preset">Reuse a saved question</label>
+                <select id="survey-question-preset" aria-label="Saved village questions">
+                  <option value="">Write a new question</option>
+                </select>
+                <button id="survey-question-delete" class="button button-outline" type="button" disabled>Delete selected saved question</button>
+                <label for="survey-question-scope">Save question template for</label>
+                <select id="survey-question-scope">
+                  <option value="village">This village only</option>
+                  <option value="global">All villages (global template)</option>
+                </select>
+                <label for="survey-question">Question to ask in Telugu</label>
+                <textarea id="survey-question" maxlength="400" rows="3" required>ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</textarea>
                 <fieldset class="survey-candidate-options">
                   <legend>Select candidates in this round (choose 2 or more)</legend>
                   <div id="survey-candidate-options" class="candidate-list"></div>
                 </fieldset>
                 <button class="button button-dark" type="submit">Create survey round</button>
                 <div id="survey-list" class="survey-list" aria-live="polite"></div>
-                <p class="field-help">Create separate rounds for each matchup or for all candidates. Each round is dated and keeps its responses separate.</p>
+                <p class="field-help">Every round belongs to one village, with that village’s candidates and results. Choose a global question template to reuse its wording across villages.</p>
               </form>
+          </section>
+        </section>
 
-              <div class="section-divider"></div>
-
-              <form id="contact-form" class="contact-form">
-              <label for="contact-phone">Add a phone number</label>
-              <div class="phone-fields">
-                <input id="contact-name" name="name" maxlength="80" placeholder="Person’s name (optional)">
-                <input id="contact-phone" name="phone" type="tel" placeholder="+91 phone number" required>
+        <section id="tab-people" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-people" hidden>
+          <section class="section-intro">
+            <p class="eyebrow">04 · PEOPLE DIRECTORY</p>
+            <h2>Add people by village and ward</h2>
+            <p>Add a phone number, email address, or both. Email outreach opens a draft for you to review and send.</p>
+          </section>
+          <section class="panel setup-panel people-setup-panel">
+            <form id="contact-form" class="contact-form">
+              <label for="contact-village">Village</label>
+              <select id="contact-village" required aria-label="Contact's village"></select>
+              <label for="contact-ward">Ward</label>
+              <select id="contact-ward" required aria-label="Contact's ward"></select>
+              <label for="contact-name">Person's name <span class="muted">(optional)</span></label>
+              <input id="contact-name" name="name" maxlength="80" placeholder="Person’s name (optional)">
+              <div class="phone-fields contact-address-fields">
+                <div class="contact-method-field">
+                  <label for="contact-phone">Phone number <span class="muted">(optional)</span></label>
+                  <input id="contact-phone" name="phone" type="tel" placeholder="+91 phone number">
+                </div>
+                <div class="contact-method-field">
+                  <label for="contact-email">Email address <span class="muted">(optional)</span></label>
+                  <input id="contact-email" name="email" type="email" maxlength="254" placeholder="name@example.com">
+                </div>
               </div>
-              <div class="phone-fields phone-fields-location">
-                <select id="contact-village" required aria-label="Contact's village"></select>
-                <select id="contact-ward" required aria-label="Contact's ward"></select>
-                <button class="button button-dark" type="submit">Add number <span aria-hidden="true">+</span></button>
-              </div>
+              <p class="field-help">Enter at least one contact method: phone or email.</p>
+              <button class="button button-dark" type="submit">Add person <span aria-hidden="true">+</span></button>
             </form>
 
             <div class="section-divider"></div>
 
             <div class="upload-heading">
               <div>
-                <label for="csv-file">Add people by village &amp; ward</label>
-                <p class="field-help">Choose a village, then upload a CSV with phone and ward columns.</p>
+                <label for="csv-file">Import people by village &amp; ward</label>
+                <p class="field-help">CSV needs a ward column and at least one of phone or email. Name is optional.</p>
               </div>
               <span class="upload-icon" aria-hidden="true">↑</span>
             </div>
@@ -216,16 +280,20 @@
               <input id="csv-file" type="file" accept=".csv,text/csv" hidden>
               <button id="download-template" class="text-button" type="button">Download sample CSV</button>
             </div>
-            <p id="upload-message" class="field-help" role="status">Phone numbers are kept private and saved on this server.</p>
+            <p id="upload-message" class="field-help" role="status">Contact details are private and saved on this server.</p>
+            <section class="pending-signups">
+              <h3>QR registrations awaiting approval</h3>
+              <p class="field-help">People who register with a village QR code appear here before they can be contacted or counted in results.</p>
+              <div id="pending-contact-list" class="pending-contact-list" aria-live="polite"></div>
             </section>
-          </div>
+          </section>
         </section>
 
         <section id="tab-calls" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-calls" hidden>
           <section class="section-intro">
-            <p class="eyebrow">02 · REACH YOUR PEOPLE</p>
-            <h2>Call, message &amp; record</h2>
-            <p>Choose a village to see its phone list. Calls and texts open your device’s phone apps; nothing is sent automatically.</p>
+            <p class="eyebrow">05 · REACH YOUR PEOPLE</p>
+            <h2>Call, message, email &amp; record</h2>
+            <p>Choose a village and survey round to contact people using phone, message, email or WhatsApp. Drafts open on your device for you to review; nothing is sent automatically.</p>
           </section>
           <section class="panel survey-panel outreach-panel">
             <div class="panel-heading">
@@ -238,13 +306,40 @@
             <div class="outreach-grid">
               <div class="telugu-question">
                 <span class="quote-mark" aria-hidden="true">“</span>
-                <p lang="te">ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</p>
-                <span class="question-translation">In this election, who are you thinking of voting for?</span>
+                <p id="survey-question-display" lang="te">ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</p>
+                <span class="question-translation">Choose a survey round to load its saved question.</span>
               </div>
               <div class="outreach-actions">
+                <label for="call-question-preset">Saved questions (this village and global)</label>
+                <select id="call-question-preset" aria-label="Choose a saved question">
+                  <option value="">Choose a saved question</option>
+                </select>
+                <button id="call-question-delete" class="button button-outline" type="button" disabled>Delete selected saved question</button>
+                <label for="call-question-scope">Save question template for</label>
+                <select id="call-question-scope">
+                  <option value="village">This village only</option>
+                  <option value="global">All villages (global template)</option>
+                </select>
+                <label for="call-question-editor">Question to play or read aloud</label>
+                <textarea id="call-question-editor" lang="te" maxlength="400" rows="3" placeholder="Type a Telugu question...">ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</textarea>
+                <button id="save-call-question" class="button button-outline" type="button" disabled>Save question for this survey</button>
+                <p class="field-help">Type any question here. Save it to the selected survey before collecting responses.</p>
                 <button id="speak-question" class="button button-primary" type="button"><span aria-hidden="true">▶</span> Play Telugu voice</button>
+                <label for="voice-selection">Telugu voice on this device</label>
+                <select id="voice-selection" aria-describedby="voice-status"><option value="">Finding Telugu voices…</option></select>
+                <label for="voice-style">Speaking style</label>
+                <select id="voice-style">
+                  <option value="clear">Clear and slow</option>
+                  <option value="village">Village-style preview (slower, higher pitch)</option>
+                </select>
+                <button id="record-voice-question" class="button button-outline" type="button" disabled>Record a Telugu voice for this question</button>
+                <button id="stop-voice-recording" class="button button-outline" type="button" hidden>Stop and save recording</button>
+                <label class="button button-outline voice-upload-label" for="voice-recording-upload">Upload a Telugu voice recording</label>
+                <input id="voice-recording-upload" type="file" accept="audio/*" hidden>
+                <audio id="voice-recording-player" controls preload="none" hidden></audio>
+                <p class="field-help">If Play has no Telugu voice, record yourself reading this question or upload an MP3/WAV/M4A/OGG/WebM clip. Microphone recording needs HTTPS or localhost.</p>
                 <button id="voice-answer" class="button button-outline" type="button"><span aria-hidden="true">🎙</span> How voice recording works</button>
-                <p id="voice-status" class="field-help" role="status">Plays aloud on this device for a phone conversation. Audio is not sent or stored.</p>
+                <p id="voice-status" class="field-help" role="status">Choose an installed Telugu voice, or record a local voice for the selected survey question if your device has no Telugu text-to-speech voice.</p>
               </div>
             </div>
             <div class="consent-note"><span aria-hidden="true">♡</span><p>Ask permission before recording a preference. Browser speech recognition can help enter an answer after the call; confirm it before saving.</p></div>
@@ -271,11 +366,17 @@
               <div class="bulk-tools">
                 <label class="select-all-label"><input id="select-visible-contacts" type="checkbox"> Select all visible contacts</label>
                 <span id="selected-count">0 selected</span>
+                <fieldset class="channel-selection">
+                  <legend>Outreach channels for selected people</legend>
+                  <label><input type="checkbox" data-outreach-channel="phone"> Call</label>
+                  <label><input type="checkbox" data-outreach-channel="message"> Message</label>
+                  <label><input type="checkbox" data-outreach-channel="whatsapp"> WhatsApp</label>
+                  <label><input type="checkbox" data-outreach-channel="email"> Email</label>
+                </fieldset>
                 <button id="clear-contact-selection" class="button button-outline" type="button">Clear selection</button>
-                <button id="call-next-selected" class="button button-outline" type="button" disabled>Call next selected</button>
-                <button id="message-next-selected" class="button button-outline" type="button" disabled>Message next selected</button>
+                <button id="open-next-outreach" class="button button-primary" type="button" disabled>Open next selected outreach</button>
               </div>
-              <p class="field-help">Selected calls/messages open one at a time in your phone app. Simultaneous network outreach needs a telephony provider and is not included.</p>
+              <p class="field-help">Choose one or more channels, select people, then open each call, message, WhatsApp chat or email draft one at a time. Nothing is sent automatically.</p>
               <div class="table-wrap">
                 <table>
                   <thead><tr><th>Person</th><th>Village / ward</th><th>Survey response</th><th>Contact</th><th>Record</th><th><span class="sr-only">Remove contact</span></th></tr></thead>
@@ -283,11 +384,11 @@
                 </table>
                 <div id="empty-people" class="empty-state">
                   <span class="empty-icon" aria-hidden="true">☏</span>
-                  <strong>No phone numbers for this village yet</strong>
-                  <span>Add numbers in Villages &amp; candidates to start contacting residents.</span>
+                  <strong>No approved people for this village yet</strong>
+                  <span>Add or approve people in the Add people tab to start contacting residents.</span>
                 </div>
               </div>
-              <p class="call-note">Call opens your device’s phone dialer. Send text opens a prefilled message for you to review and send. Choose Record after a call or message reply to save the answer and how it was received.</p>
+              <p class="call-note">Calls open your phone handler. SMS, WhatsApp and email open drafts for you to review and send. No messages are sent automatically. Record a reply and select its channel.</p>
             </div>
             <div id="choose-village-prompt" class="choose-village-prompt">
               <span class="empty-icon" aria-hidden="true">⌖</span>
@@ -299,7 +400,7 @@
 
         <section id="tab-results" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-results" hidden>
           <section class="section-intro">
-            <p class="eyebrow">03 · REVIEW RESPONSES</p>
+            <p class="eyebrow">06 · REVIEW RESPONSES</p>
             <h2>Survey results by ward</h2>
             <p>Select a village and ward to see recorded candidate preferences. Only named preferences are included in percentages.</p>
           </section>
@@ -331,6 +432,34 @@
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
 
+    <dialog id="contact-edit-dialog" class="response-dialog">
+      <form id="contact-edit-form">
+        <div class="dialog-top">
+          <div>
+            <p class="eyebrow">PEOPLE DIRECTORY</p>
+            <h2>Update contact</h2>
+          </div>
+          <button id="close-contact-edit" class="close-button" type="button" aria-label="Close">×</button>
+        </div>
+        <label for="contact-edit-name">Name</label>
+        <input id="contact-edit-name" maxlength="80">
+        <label for="contact-edit-village">Village</label>
+        <select id="contact-edit-village" required></select>
+        <label for="contact-edit-ward">Ward</label>
+        <select id="contact-edit-ward" required></select>
+        <label for="contact-edit-phone">Phone number</label>
+        <input id="contact-edit-phone" type="tel">
+        <label for="contact-edit-email">Email address</label>
+        <input id="contact-edit-email" type="email" maxlength="254">
+        <p class="field-help">Enter at least one contact method. Updating a person's location keeps past responses with the village and ward where each answer was recorded.</p>
+        <p id="contact-edit-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button id="cancel-contact-edit" class="button button-outline" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Save changes</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="response-dialog" class="response-dialog">
       <form id="response-form" method="dialog">
         <div class="dialog-top">
@@ -341,7 +470,7 @@
           </div>
           <button id="close-dialog" class="close-button" type="button" aria-label="Close">×</button>
         </div>
-        <div class="dialog-question" lang="te">ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</div>
+        <div id="dialog-question" class="dialog-question" lang="te">ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</div>
         <button id="dialog-voice-answer" class="button button-outline voice-dialog-button" type="button"><span aria-hidden="true">🎙</span> Speak candidate name</button>
         <p id="dialog-voice-status" class="field-help" role="status">Or choose the answer below. The person must agree before a preference is saved.</p>
         <label for="response-choice">Choose what they said</label>
@@ -351,6 +480,7 @@
           <option value="phone">Phone call</option>
           <option value="message">Text message reply</option>
           <option value="voice">Spoken / voice response</option>
+          <option value="email">Email reply</option>
         </select>
         <label id="consent-label" class="consent-checkbox"><input id="response-consent" type="checkbox"> The person agreed to share their preference</label>
         <p id="dialog-error" class="form-error" role="alert"></p>

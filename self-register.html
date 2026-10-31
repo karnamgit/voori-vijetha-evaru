@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#153d32">
+    <title>Join the village survey</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body class="registration-page">
+    <main class="registration-card">
+      <a class="brand registration-brand" href="/" aria-label="Voori Vijetha Evaru">
+        <span class="brand-mark" aria-hidden="true">VV</span>
+        <span><strong>Voori Vijetha Evaru</strong><small>గ్రామ పంచాయతీ సర్వే</small></span>
+      </a>
+      <p class="eyebrow">VOLUNTARY REGISTRATION</p>
+      <h1>Add your contact details</h1>
+      <div id="registration-location" class="registration-location" aria-live="polite">
+        <strong data-registration-village>Loading village…</strong>
+        <small data-registration-area></small>
+        <span data-registration-ward></span>
+      </div>
+      <p class="field-help">Share a phone number or email address (or both) if you agree to be contacted about this survey. Your registration will be reviewed by the survey admin before use.</p>
+      <form id="self-registration-form">
+        <label for="registration-name">Your name <span class="muted">(optional)</span></label>
+        <input id="registration-name" maxlength="80" autocomplete="name" placeholder="Your name">
+        <label for="registration-phone">Phone number <span class="muted">(optional)</span></label>
+        <input id="registration-phone" type="tel" autocomplete="tel" placeholder="+91 phone number">
+        <label for="registration-email">Email address <span class="muted">(optional)</span></label>
+        <input id="registration-email" type="email" maxlength="254" autocomplete="email" placeholder="name@example.com">
+        <label class="honeypot" aria-hidden="true">Leave this field empty<input id="registration-website" tabindex="-1" autocomplete="off"></label>
+        <label class="registration-consent"><input id="registration-consent" type="checkbox" required> I agree that the survey admin may contact me about this survey. I understand my details will be stored privately for this purpose.</label>
+        <button id="registration-submit" class="button button-primary full-width" type="submit" disabled>Submit registration</button>
+        <p id="registration-status" class="field-help" role="status"></p>
+      </form>
+      <p class="registration-footnote">Submitting contact details does not submit a voting preference. You may decline to answer any survey question.</p>
+    </main>
+    <script src="/self-register.js" defer></script>
+  </body>
+</html>
