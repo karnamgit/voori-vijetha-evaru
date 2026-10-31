@@ -1,0 +1,9 @@
+{
+  "name": "vooru-vijetha-evaru",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Admin-only village election survey and dashboard",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

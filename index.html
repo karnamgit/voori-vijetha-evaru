@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#153d32">
+    <title>Voori Vijetha Evaru — Village Survey</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div id="login-screen" class="login-screen">
+      <form id="setup-form" class="login-card" hidden>
+        <div class="brand-mark" aria-hidden="true">VV</div>
+        <p class="eyebrow">FIRST-TIME SETUP · PRIVATE ADMIN</p>
+        <h1>Voori Vijetha Evaru</h1>
+        <p class="muted">Create your admin password to protect this survey.</p>
+        <label for="setup-password">Create admin password</label>
+        <input id="setup-password" name="password" type="password" minlength="12" autocomplete="new-password" required>
+        <label for="setup-password-confirm">Confirm password</label>
+        <input id="setup-password-confirm" name="confirmPassword" type="password" minlength="12" autocomplete="new-password" required>
+        <button class="button button-primary full-width" type="submit">Secure my survey <span aria-hidden="true">→</span></button>
+        <p id="setup-error" class="form-error" role="alert"></p>
+        <p class="login-footnote">Use at least 12 characters. Save the recovery code shown after setup; you’ll need it to reset a forgotten password.</p>
+      </form>
+
+      <form id="recovery-form" class="login-card" hidden>
+        <div class="brand-mark" aria-hidden="true">VV</div>
+        <p class="eyebrow">ACCOUNT RECOVERY · PRIVATE ADMIN</p>
+        <h1>Reset your password</h1>
+        <p class="muted">Use the recovery code you saved during setup or from Admin settings.</p>
+        <label for="recovery-code">Recovery code</label>
+        <input id="recovery-code" name="recoveryCode" type="password" autocomplete="one-time-code" required>
+        <label for="recovery-password">New admin password</label>
+        <input id="recovery-password" name="password" type="password" minlength="12" autocomplete="new-password" required>
+        <label for="recovery-password-confirm">Confirm new password</label>
+        <input id="recovery-password-confirm" name="confirmPassword" type="password" minlength="12" autocomplete="new-password" required>
+        <button class="button button-primary full-width" type="submit">Reset password <span aria-hidden="true">→</span></button>
+        <p id="recovery-error" class="form-error" role="alert"></p>
+        <button id="back-to-login" class="text-button" type="button">Back to sign in</button>
+      </form>
+
+      <form id="login-form" class="login-card" hidden>
+        <div class="brand-mark" aria-hidden="true">VV</div>
+        <p class="eyebrow">GRAM PANCHAYAT · PRIVATE ADMIN</p>
+        <h1>Voori Vijetha Evaru</h1>
+        <p class="muted">Sign in to manage your village survey.</p>
+        <label for="password">Admin password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button class="button button-primary full-width" type="submit">Sign in <span aria-hidden="true">→</span></button>
+        <p id="login-error" class="form-error" role="alert"></p>
+        <a id="google-login" class="button button-outline full-width google-login" href="/api/google/start" hidden>Continue with Google</a>
+        <button id="show-recovery" class="text-button recovery-link" type="button">Forgot your password?</button>
+        <p class="login-footnote">Full contact data is admin-only. Google viewers require approval and see masked aggregates only.</p>
+        <p id="access-status" class="field-help" role="status" hidden></p>
+      </form>
+    </div>
+
+    <div id="app-screen" class="app-shell" hidden>
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Voori Vijetha Evaru home">
+          <span class="brand-mark" aria-hidden="true">VV</span>
+          <span><strong>Voori Vijetha Evaru</strong><small>గ్రామ పంచాయతీ సర్వే</small></span>
+        </a>
+        <div class="topbar-actions">
+          <span id="role-label" class="admin-label"><span class="status-dot"></span> Admin view</span>
+          <button id="recovery-settings" class="button button-quiet" type="button">Admin &amp; recovery</button>
+          <button id="logout-button" class="button button-quiet" type="button">Sign out</button>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="welcome-row">
+          <div>
+            <p class="eyebrow">YOUR VILLAGE. YOUR VOICE.</p>
+            <h1>Voori Vijetha Evaru<span class="title-period">?</span></h1>
+            <p class="muted">A simple, private way to hear from every ward.</p>
+          </div>
+          <div class="privacy-chip"><span aria-hidden="true">🔒</span> Private admin survey</div>
+        </section>
+
+        <nav class="primary-tabs" role="tablist" aria-label="Survey sections">
+          <button id="tab-button-overview" class="primary-tab active" type="button" role="tab" aria-selected="true" data-tab="overview"><span aria-hidden="true">⌂</span> Overview</button>
+          <button id="tab-button-villages" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="villages"><span aria-hidden="true">▦</span> Villages &amp; candidates</button>
+          <button id="tab-button-calls" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="calls"><span aria-hidden="true">☎</span> Call &amp; record</button>
+          <button id="tab-button-results" class="primary-tab" type="button" role="tab" aria-selected="false" data-tab="results"><span aria-hidden="true">▥</span> Survey results</button>
+        </nav>
+
+        <section id="tab-overview" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-overview">
+          <section class="stats-grid" aria-label="Survey overview">
+            <article class="stat-card stat-card-dark">
+              <span class="stat-icon" aria-hidden="true">☷</span>
+              <span class="stat-label">People on your list</span>
+              <strong id="total-count" class="stat-value">0</strong>
+              <span class="stat-note">Across villages &amp; wards</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon" aria-hidden="true">✓</span>
+              <span class="stat-label">Responses collected</span>
+              <strong id="response-count" class="stat-value">0</strong>
+              <span id="response-rate" class="stat-note">0% of your list</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon stat-icon-sun" aria-hidden="true">↗</span>
+              <span class="stat-label">Leading preference</span>
+              <strong id="leading-candidate" class="stat-value stat-value-name">—</strong>
+              <span id="leading-share" class="stat-note">No preferences yet</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon" aria-hidden="true">◷</span>
+              <span class="stat-label">Still to contact</span>
+              <strong id="pending-count" class="stat-value">0</strong>
+              <span class="stat-note">Not yet reached</span>
+            </article>
+          </section>
+          <section class="panel welcome-panel">
+            <div class="welcome-panel-copy">
+              <p class="eyebrow">SIMPLE SURVEY WORKFLOW</p>
+              <h2>One village at a time.</h2>
+              <p>Set up villages and candidates, contact people using their phone app, then review responses by ward.</p>
+            </div>
+            <div class="workflow-steps">
+              <div><span>01</span><strong>Set up</strong><small>Add villages, wards, candidates and phone numbers.</small></div>
+              <div><span>02</span><strong>Contact</strong><small>Call or draft a text, then record the person’s answer.</small></div>
+              <div><span>03</span><strong>Review</strong><small>Compare recorded preferences by village and ward.</small></div>
+            </div>
+            <div class="quick-actions">
+              <button class="button button-primary" type="button" data-open-tab="villages">Set up villages <span aria-hidden="true">→</span></button>
+              <button class="button button-outline" type="button" data-open-tab="calls">Go to call list</button>
+            </div>
+          </section>
+        </section>
+
+        <section id="tab-villages" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-villages" hidden>
+          <section class="section-intro">
+            <p class="eyebrow">01 · SET UP YOUR SURVEY</p>
+            <h2>Villages, wards &amp; candidates</h2>
+            <p>Create a village first. Then manage its candidate list and resident phone numbers.</p>
+          </section>
+          <div class="content-grid village-workspace">
+            <section class="panel setup-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">GET STARTED</p>
+                <h2>Set up your survey</h2>
+              </div>
+              <span class="step-badge">01</span>
+            </div>
+
+            <form id="village-form" class="village-form">
+              <label for="village-name">Add a village</label>
+              <input id="village-name" name="name" maxlength="100" placeholder="Enter village name" required>
+              <div class="ward-entry">
+                <input id="village-wards" name="wards" placeholder="Ward names/numbers, e.g. 1, 2, 3" required>
+                <button class="button button-dark" type="submit">Add village <span aria-hidden="true">+</span></button>
+              </div>
+              <p class="field-help">Add the village and its wards together. You can add more wards below later.</p>
+            </form>
+            <div id="village-list" class="village-list" aria-live="polite"></div>
+
+            <div class="section-divider"></div>
+
+            <form id="candidate-form" class="candidate-form">
+              <label for="candidate-name">Add candidates</label>
+              <select id="candidate-village" required aria-label="Candidate's village"></select>
+              <div class="input-action">
+                <input id="candidate-name" name="name" maxlength="80" placeholder="Enter a candidate name" required>
+                <button class="button button-dark" type="submit">Add <span aria-hidden="true">+</span></button>
+              </div>
+              <div id="candidate-list" class="candidate-list" aria-live="polite"></div>
+              <p class="field-help">Add every candidate before starting calls. Candidate names can be in తెలుగు too.</p>
+            </form>
+
+            <div class="section-divider"></div>
+
+              <form id="survey-form" class="candidate-form">
+                <label for="survey-village">Create a survey round</label>
+                <select id="survey-village" required aria-label="Survey village"></select>
+                <input id="survey-title" maxlength="100" placeholder="Survey name, e.g. Candidate comparison 1" required>
+                <fieldset class="survey-candidate-options">
+                  <legend>Select candidates in this round (choose 2 or more)</legend>
+                  <div id="survey-candidate-options" class="candidate-list"></div>
+                </fieldset>
+                <button class="button button-dark" type="submit">Create survey round</button>
+                <div id="survey-list" class="survey-list" aria-live="polite"></div>
+                <p class="field-help">Create separate rounds for each matchup or for all candidates. Each round is dated and keeps its responses separate.</p>
+              </form>
+
+              <div class="section-divider"></div>
+
+              <form id="contact-form" class="contact-form">
+              <label for="contact-phone">Add a phone number</label>
+              <div class="phone-fields">
+                <input id="contact-name" name="name" maxlength="80" placeholder="Person’s name (optional)">
+                <input id="contact-phone" name="phone" type="tel" placeholder="+91 phone number" required>
+              </div>
+              <div class="phone-fields phone-fields-location">
+                <select id="contact-village" required aria-label="Contact's village"></select>
+                <select id="contact-ward" required aria-label="Contact's ward"></select>
+                <button class="button button-dark" type="submit">Add number <span aria-hidden="true">+</span></button>
+              </div>
+            </form>
+
+            <div class="section-divider"></div>
+
+            <div class="upload-heading">
+              <div>
+                <label for="csv-file">Add people by village &amp; ward</label>
+                <p class="field-help">Choose a village, then upload a CSV with phone and ward columns.</p>
+              </div>
+              <span class="upload-icon" aria-hidden="true">↑</span>
+            </div>
+            <label class="sr-only" for="csv-village">Village for imported contacts</label>
+            <select id="csv-village" class="csv-village" required></select>
+            <div class="upload-actions">
+              <label class="button button-outline file-button" for="csv-file">Choose CSV file</label>
+              <input id="csv-file" type="file" accept=".csv,text/csv" hidden>
+              <button id="download-template" class="text-button" type="button">Download sample CSV</button>
+            </div>
+            <p id="upload-message" class="field-help" role="status">Phone numbers are kept private and saved on this server.</p>
+            </section>
+          </div>
+        </section>
+
+        <section id="tab-calls" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-calls" hidden>
+          <section class="section-intro">
+            <p class="eyebrow">02 · REACH YOUR PEOPLE</p>
+            <h2>Call, message &amp; record</h2>
+            <p>Choose a village to see its phone list. Calls and texts open your device’s phone apps; nothing is sent automatically.</p>
+          </section>
+          <section class="panel survey-panel outreach-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">TELUGU VOICE QUESTION</p>
+                <h2>Play the survey question</h2>
+              </div>
+              <span class="step-badge step-badge-sun">🎙</span>
+            </div>
+            <div class="outreach-grid">
+              <div class="telugu-question">
+                <span class="quote-mark" aria-hidden="true">“</span>
+                <p lang="te">ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</p>
+                <span class="question-translation">In this election, who are you thinking of voting for?</span>
+              </div>
+              <div class="outreach-actions">
+                <button id="speak-question" class="button button-primary" type="button"><span aria-hidden="true">▶</span> Play Telugu voice</button>
+                <button id="voice-answer" class="button button-outline" type="button"><span aria-hidden="true">🎙</span> How voice recording works</button>
+                <p id="voice-status" class="field-help" role="status">Plays aloud on this device for a phone conversation. Audio is not sent or stored.</p>
+              </div>
+            </div>
+            <div class="consent-note"><span aria-hidden="true">♡</span><p>Ask permission before recording a preference. Browser speech recognition can help enter an answer after the call; confirm it before saving.</p></div>
+          </section>
+
+          <section class="panel people-panel">
+            <div class="panel-heading people-heading">
+              <div>
+                <p class="eyebrow">CALL &amp; RECORD</p>
+                <h2>Your people</h2>
+              </div>
+              <div class="people-tools">
+                <label for="village-filter">Village</label>
+                <select id="village-filter"><option value="">Select a village</option></select>
+                <label for="call-survey-filter">Survey round</label>
+                <select id="call-survey-filter" disabled><option value="">Select a survey</option></select>
+                <label class="sr-only" for="ward-filter">Filter by ward</label>
+                <select id="ward-filter"><option value="">All wards</option></select>
+                <label class="sr-only" for="people-search">Search contacts</label>
+                <input id="people-search" type="search" placeholder="Search name or number">
+              </div>
+            </div>
+            <div id="people-list-content" hidden>
+              <div class="bulk-tools">
+                <label class="select-all-label"><input id="select-visible-contacts" type="checkbox"> Select all visible contacts</label>
+                <span id="selected-count">0 selected</span>
+                <button id="clear-contact-selection" class="button button-outline" type="button">Clear selection</button>
+                <button id="call-next-selected" class="button button-outline" type="button" disabled>Call next selected</button>
+                <button id="message-next-selected" class="button button-outline" type="button" disabled>Message next selected</button>
+              </div>
+              <p class="field-help">Selected calls/messages open one at a time in your phone app. Simultaneous network outreach needs a telephony provider and is not included.</p>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Person</th><th>Village / ward</th><th>Survey response</th><th>Contact</th><th>Record</th><th><span class="sr-only">Remove contact</span></th></tr></thead>
+                  <tbody id="people-table"></tbody>
+                </table>
+                <div id="empty-people" class="empty-state">
+                  <span class="empty-icon" aria-hidden="true">☏</span>
+                  <strong>No phone numbers for this village yet</strong>
+                  <span>Add numbers in Villages &amp; candidates to start contacting residents.</span>
+                </div>
+              </div>
+              <p class="call-note">Call opens your device’s phone dialer. Send text opens a prefilled message for you to review and send. Choose Record after a call or message reply to save the answer and how it was received.</p>
+            </div>
+            <div id="choose-village-prompt" class="choose-village-prompt">
+              <span class="empty-icon" aria-hidden="true">⌖</span>
+              <strong>Choose a village to view its call list</strong>
+              <span>Phone numbers are separated by village and ward.</span>
+            </div>
+          </section>
+        </section>
+
+        <section id="tab-results" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-results" hidden>
+          <section class="section-intro">
+            <p class="eyebrow">03 · REVIEW RESPONSES</p>
+            <h2>Survey results by ward</h2>
+            <p>Select a village and ward to see recorded candidate preferences. Only named preferences are included in percentages.</p>
+          </section>
+          <section class="panel dashboard-panel">
+          <div class="panel-heading dashboard-heading">
+            <div>
+              <p class="eyebrow">LIVE SURVEY SNAPSHOT</p>
+              <h2>What people are saying</h2>
+            </div>
+            <span class="snapshot-label"><span class="status-dot"></span> Saved survey responses</span>
+          </div>
+          <div class="dashboard-filters">
+            <label for="dashboard-village-filter">Village</label>
+            <select id="dashboard-village-filter"><option value="">Select a village</option></select>
+            <label for="dashboard-survey-filter">Survey round</label>
+            <select id="dashboard-survey-filter" disabled><option value="">Select a survey</option></select>
+            <label for="compare-survey-filter">Compare with</label>
+            <select id="compare-survey-filter" disabled><option value="">No comparison</option></select>
+            <label for="dashboard-ward-filter">Ward</label>
+            <select id="dashboard-ward-filter"><option value="">All wards</option></select>
+          </div>
+          <div id="candidate-results" class="candidate-results"></div>
+          <p class="estimate-disclaimer">These are survey preferences among people who named a candidate—not a prediction of election results.</p>
+          </section>
+        </section>
+
+        <footer class="footer-note">Use survey results responsibly. Ask for consent and follow applicable privacy and election rules.</footer>
+      </main>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+
+    <dialog id="response-dialog" class="response-dialog">
+      <form id="response-form" method="dialog">
+        <div class="dialog-top">
+          <div>
+            <p class="eyebrow">RECORD RESPONSE</p>
+            <h2 id="dialog-contact-name">Person</h2>
+            <p id="dialog-contact-meta" class="muted"></p>
+          </div>
+          <button id="close-dialog" class="close-button" type="button" aria-label="Close">×</button>
+        </div>
+        <div class="dialog-question" lang="te">ఈ ఎన్నికల్లో మీరు ఎవరికి ఓటు వేయాలని అనుకుంటున్నారు?</div>
+        <button id="dialog-voice-answer" class="button button-outline voice-dialog-button" type="button"><span aria-hidden="true">🎙</span> Speak candidate name</button>
+        <p id="dialog-voice-status" class="field-help" role="status">Or choose the answer below. The person must agree before a preference is saved.</p>
+        <label for="response-choice">Choose what they said</label>
+        <select id="response-choice" required></select>
+        <label for="response-channel">How did you receive this response?</label>
+        <select id="response-channel">
+          <option value="phone">Phone call</option>
+          <option value="message">Text message reply</option>
+          <option value="voice">Spoken / voice response</option>
+        </select>
+        <label id="consent-label" class="consent-checkbox"><input id="response-consent" type="checkbox"> The person agreed to share their preference</label>
+        <p id="dialog-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button id="cancel-response" class="button button-outline" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Save response</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="recovery-dialog" class="response-dialog">
+      <div class="recovery-dialog-content">
+        <div class="dialog-top">
+          <div>
+            <p class="eyebrow">ADMIN ACCOUNT</p>
+            <h2 id="recovery-dialog-title">Save your recovery code</h2>
+          </div>
+          <button id="close-recovery-dialog" class="close-button" type="button" aria-label="Close">×</button>
+        </div>
+        <p id="recovery-dialog-copy" class="muted">Keep this code somewhere private. It can reset your admin password if you forget it.</p>
+        <code id="recovery-code-display" class="recovery-code"></code>
+        <div class="dialog-actions">
+          <button id="copy-recovery-code" class="button button-outline" type="button">Copy code</button>
+          <button id="done-recovery-code" class="button button-primary" type="button">I saved it</button>
+        </div>
+        <p id="recovery-dialog-status" class="field-help" role="status"></p>
+      </div>
+    </dialog>
+    <dialog id="admin-dialog" class="response-dialog admin-dialog">
+      <div class="admin-dialog-content">
+        <div class="dialog-top">
+          <div>
+            <p class="eyebrow">ADMIN ACCESS</p>
+            <h2>Manage access requests</h2>
+          </div>
+          <button id="close-admin-dialog" class="close-button" type="button" aria-label="Close">×</button>
+        </div>
+        <p class="muted">Google users see only masked, aggregated results after you approve them. They never receive contact lists or individual answers.</p>
+        <div id="access-request-list" class="access-request-list"></div>
+        <div class="dialog-actions">
+          <button id="rotate-recovery-code" class="button button-outline" type="button">Generate recovery code</button>
+          <button id="close-admin-dialog-done" class="button button-primary" type="button">Done</button>
+        </div>
+      </div>
+    </dialog>
+    <script src="/app.js" defer></script>
+  </body>
+</html>
